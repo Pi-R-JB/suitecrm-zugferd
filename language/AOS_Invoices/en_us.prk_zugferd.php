@@ -8,3 +8,6 @@ $mod_strings['LBL_ORIGINAL_INVOICE_ID'] = 'Original invoice ID';
 
 $mod_strings['LBL_REVENUE_AMOUNT'] = 'Revenue amount';
 $mod_strings['LBL_REVENUE_AMOUNT_USDOLLAR'] = 'Revenue amount (base currency)';
+
+$mod_strings['LBL_SERVICE_PERIOD_START'] = 'Service period start';
+$mod_strings['LBL_SERVICE_PERIOD_END'] = 'Service period end';
