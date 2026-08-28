@@ -3,7 +3,7 @@
 $manifest = array(
     'name' => 'ZUGFeRD for AOS Invoices',
     'description' => 'ZUGFeRD / Factur-X PDF/A-3b mit EN16931 XML für SuiteCRM AOS_Invoices.',
-    'version' => '0.2.0-beta.1',
+    'version' => '0.2.0-beta.2',
     'author' => 'Pierre Rohr',
     'readme' => 'README.txt',
     'acceptable_sugar_flavors' => array('CE'),
