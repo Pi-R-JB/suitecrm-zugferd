@@ -2,6 +2,11 @@ ZUGFeRD for AOS Invoices
 Version 0.2.0-beta.1
 ================================
 
+[![Release](https://img.shields.io/github/v/release/Pi-R-JB/suitecrm-zugferd?include_prereleases)](https://github.com/Pi-R-JB/suitecrm-zugferd/releases)
+[![License](https://img.shields.io/github/license/Pi-R-JB/suitecrm-zugferd)](LICENSE)
+![PHP](https://img.shields.io/badge/PHP-%3E%3D%208.1-blue)
+
+
 
 FUNKTIONSUMFANG
 ---------------
