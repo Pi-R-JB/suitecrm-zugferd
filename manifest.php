@@ -9,7 +9,7 @@ $manifest = array(
     'acceptable_sugar_flavors' => array('CE'),
     'acceptable_sugar_versions' => array(
         'exact_matches' => array(),
-        'regex_matches' => array('6\.5\..*'),
+        'regex_matches' => array('6\\.5\\..*'),
     ),
     'is_uninstallable' => true,
     'published_date' => '2026-08-28',
@@ -110,6 +110,10 @@ $installdefs = array(
 
     'pre_execute' => array(
         '<basepath>/scripts/pre_install.php',
+    ),
+
+    'post_execute' => array(
+        '<basepath>/scripts/post_install.php',
     ),
 
     'post_uninstall' => array(
