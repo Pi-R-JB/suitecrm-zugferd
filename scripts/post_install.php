@@ -4,7 +4,7 @@ function post_install()
 {
     global $db;
 
-    echo '<strong>ZUGFeRD for AOS Invoices 0.2.0-beta.1 wurde installiert.</strong><br>';
+    echo '<strong>ZUGFeRD for AOS Invoices 0.2.0-beta.2 wurde installiert.</strong><br>';
 
     /*
      * Auf Installationen ohne bisherige AOS_Invoices-Custom-Felder
@@ -52,6 +52,14 @@ function post_install()
             ALTER TABLE aos_invoices_cstm
             ADD COLUMN revenue_amount_usdollar_c
             DECIMAL(26,6) NULL
+        ",
+        'beginn_c' => "
+            ALTER TABLE aos_invoices_cstm
+            ADD COLUMN beginn_c DATE NULL
+        ",
+        'ende_c' => "
+            ALTER TABLE aos_invoices_cstm
+            ADD COLUMN ende_c DATE NULL
         ",
     );
 
