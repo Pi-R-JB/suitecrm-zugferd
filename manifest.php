@@ -62,6 +62,10 @@ $installdefs = array(
             'to' => 'custom/Extension/modules/AOS_Invoices/Ext/Vardefs/zugferd_revenue_amount.php',
         ),
         array(
+            'from' => '<basepath>/Files/custom/Extension/modules/AOS_Invoices/Ext/Vardefs/zugferd_service_period.php',
+            'to' => 'custom/Extension/modules/AOS_Invoices/Ext/Vardefs/zugferd_service_period.php',
+        ),
+        array(
             'from' => '<basepath>/Files/custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_revenue_amount.php',
             'to' => 'custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_revenue_amount.php',
         ),
