@@ -4,6 +4,28 @@ Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert
 
 Das Projekt befindet sich aktuell noch in der Beta-Phase. Bis zur ersten stabilen Version `1.0.0` können sich Funktionen, Datenfelder und Installationsabläufe noch ändern.
 
+## [0.2.0-beta.2] - 2026-08-28
+
+Wartungsrelease nach Installation und Kompatibilitätsprüfung mit SuiteCRM 7.15.2.
+
+### Behoben
+
+- `scripts/post_install.php` wird jetzt über `post_execute` im Module-Loader-Manifest tatsächlich ausgeführt.
+- Dadurch werden die für ZUGFeRD benötigten Custom-Felder und Umsatzfelder bei der Installation zuverlässig geprüft bzw. initialisiert und bestehende Rechnungen wie vorgesehen nachgezogen.
+
+### Getestet
+
+- Installation über den SuiteCRM Module Loader auf SuiteCRM 7.15.2.
+- Wiederholte Installation bzw. Initialisierung mit bereits vorhandenen ZUGFeRD-Datenbankfeldern.
+- Composer-Autoload mit `easybill/zugferd-php` 2.1.1 und `tecnickcom/tcpdf` 6.10.1.
+
+### Hinweis
+
+- Installationsspezifische Mail-/Microsoft-365-Anpassungen sind ausdrücklich nicht Bestandteil dieses Pakets.
+- Das Paket überschreibt weder `custom/modules/Emails` noch `custom/modules/AOS_PDF_Templates/generatePdf.php`.
+
+---
+
 ## [0.2.0-beta.1] - 2026-08-28
 
 Erste öffentliche Beta-Version.
@@ -57,3 +79,4 @@ Geplant ist ungefähr folgende Entwicklung:
 ...
 0.9.0-rc.1
 1.0.0
+```
