@@ -69,8 +69,8 @@ final class ServicePeriodSyncHook
             return false;
         }
 
-        $beginn = (string)($quoteBean->beginn_c ?? '');
-        $ende = (string)($quoteBean->ende_c ?? '');
+        $beginn = $this->normalizeDateToDb((string)($quoteBean->beginn_c ?? ''));
+        $ende = $this->normalizeDateToDb((string)($quoteBean->ende_c ?? ''));
 
         if ($beginn === '' || $ende === '') {
             return false;
@@ -89,5 +89,32 @@ final class ServicePeriodSyncHook
         }
 
         return $changed;
+    }
+
+    private function normalizeDateToDb(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '' || $value === '0000-00-00') {
+            return '';
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+            return $value;
+        }
+
+        global $timedate;
+
+        if (!$timedate) {
+            return '';
+        }
+
+        $dbDate = $timedate->to_db_date($value, false);
+
+        if (!is_string($dbDate) || $dbDate === '' || $dbDate === '0000-00-00') {
+            return '';
+        }
+
+        return $dbDate;
     }
 }
