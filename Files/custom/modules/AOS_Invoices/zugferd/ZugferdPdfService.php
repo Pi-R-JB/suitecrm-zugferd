@@ -548,9 +548,16 @@ final class ZugferdPdfService
             (float)$template->margin_footer
         );
 
+        /*
+         * Technischer Unicode-Fallbackfont.
+         *
+         * Die sichtbare Schriftgestaltung kommt aus dem HTML/CSS
+         * des AOS-PDF-Templates. Benutzerdefinierte Schriftarten
+         * dürfen hier nicht fest verdrahtet werden.
+         */
         $font = $pdf->font->insert(
             $pdf->pon,
-            'gisha',
+            'dejavusans',
             '',
             10
         );
