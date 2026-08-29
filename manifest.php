@@ -38,6 +38,10 @@ $installdefs = array(
             'to' => 'custom/modules/AOS_Invoices/Hooks/ServicePeriodSyncHook.php',
         ),
         array(
+            'from' => '<basepath>/Files/custom/modules/AOS_Invoices/Hooks/OriginalQuoteRelationHook.php',
+            'to' => 'custom/modules/AOS_Invoices/Hooks/OriginalQuoteRelationHook.php',
+        ),
+        array(
             'from' => '<basepath>/Files/custom/modules/PRK_Zugferd',
             'to' => 'custom/modules/PRK_Zugferd',
         ),
@@ -76,6 +80,10 @@ $installdefs = array(
         array(
             'from' => '<basepath>/Files/custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_service_period_sync.php',
             'to' => 'custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_service_period_sync.php',
+        ),
+        array(
+            'from' => '<basepath>/Files/custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_original_quote_relation.php',
+            'to' => 'custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_original_quote_relation.php',
         ),
     ),
 
