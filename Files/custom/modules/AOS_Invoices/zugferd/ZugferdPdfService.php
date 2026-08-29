@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use SuiteCRM\PDF\TCPDF\SuiteTCPDF;
-
 require_once __DIR__ . '/ZugferdException.php';
 require_once __DIR__ . '/ZugferdService.php';
 
@@ -19,9 +17,9 @@ final class ZugferdPdfService
         $this->crmRoot = $crmRoot ?? dirname(__DIR__, 4);
 
         require_once $this->crmRoot
-            . '/lib/PDF/TCPDF/SuiteTCPDF.php';
+            . '/vendor/autoload.php';
 
-        require_once __DIR__ . '/ZugferdTCPDF.php';
+        require_once __DIR__ . '/ZugferdTcLibPdf.php';
 
         $this->xmlService =
             $xmlService ?? new ZugferdService($this->crmRoot);
@@ -77,7 +75,11 @@ final class ZugferdPdfService
         [$header, $footer, $printable] =
             $this->renderTemplateContent($bean, $template);
 
-        $pdf = $this->createPdfA3($template);
+        $pdf = $this->createPdfA3(
+            $template,
+            $header,
+            $footer
+        );
 
         $pdf->setCreator('SuiteCRM');
         $pdf->setAuthor('SuiteCRM');
@@ -91,25 +93,16 @@ final class ZugferdPdfService
             'ZUGFeRD, Factur-X, EN16931, Rechnung'
         );
 
-        $pdf->setPrintHeader(true);
-        $pdf->setHtmlHeader($header);
-
-        $pdf->setPrintFooter(true);
-        $pdf->setHtmlFooter($footer);
-
-        $this->addFacturXXmp($pdf);
+        /*
+         * Factur-X/ZUGFeRD-Metadaten und XML-Anhang.
+         */
+        $pdf->addFacturXXmp();
+        $pdf->embedFacturX($xml);
 
         /*
          * Standardisierter Dateiname innerhalb des Hybrid-PDF.
          */
         $embeddedFilename = 'factur-x.xml';
-
-        $pdf->EmbedFileFromString(
-            $embeddedFilename,
-            $xml
-        );
-
-        $pdf->AddPage();
 
         $defaultCss = file_get_contents(
             $this->crmRoot
@@ -120,11 +113,30 @@ final class ZugferdPdfService
             $defaultCss = '';
         }
 
-        $pdf->writeHTML(
-            $printable
-            . '<style>'
+        /*
+         * Nach createPdfA3() ist Region 2 die Body-Region.
+         */
+        $page = $pdf->page->getPage();
+        $pdf->page->selectRegion(
+            2,
+            (int)$page['pid']
+        );
+
+        $region = $pdf->page->getRegion(
+            (int)$page['pid']
+        );
+
+        $html =
+            '<style>'
             . $defaultCss
             . '</style>'
+            . $printable;
+
+        $pdf->addHTMLCell(
+            html: $html,
+            posx: (float)$region['RX'],
+            posy: (float)$region['RY'],
+            width: (float)$region['RW']
         );
 
         $outputDir =
@@ -152,11 +164,19 @@ final class ZugferdPdfService
             . $invoiceNumber
             . '.pdf';
 
-        /*
-         * Direkt TCPDF verwenden, da SuiteCRMs PDFWrapper
-         * PDF/A-3 nicht aktiviert.
-         */
-        $pdf->Output($pdfFile, 'F');
+        $rawPdf = $pdf->getOutPDFString();
+
+        if ($rawPdf === '') {
+            throw new ZugferdException(
+                'tc-lib-pdf hat keine PDF-Daten erzeugt.'
+            );
+        }
+
+        if (file_put_contents($pdfFile, $rawPdf) === false) {
+            throw new ZugferdException(
+                'ZUGFeRD-PDF konnte nicht gespeichert werden.'
+            );
+        }
 
         if (!is_file($pdfFile) || filesize($pdfFile) === 0) {
             throw new ZugferdException(
@@ -423,6 +443,18 @@ final class ZugferdPdfService
             $objectArr
         );
 
+        $header = $this->resolveLocalImageSources(
+            (string)$header
+        );
+
+        $footer = $this->resolveLocalImageSources(
+            (string)$footer
+        );
+
+        $converted = $this->resolveLocalImageSources(
+            (string)$converted
+        );
+
         $printable = str_replace(
             "\n",
             '<br />',
@@ -436,33 +468,77 @@ final class ZugferdPdfService
         ];
     }
 
-    private function createPdfA3($template): ZugferdTCPDF
+    /**
+     * Löst lokale Bildreferenzen aus AOS-PDF-Templates auf.
+     *
+     * URLs wie
+     *   http://host/public/logo.png
+     *   https://host/public/logo.png
+     *   /public/logo.png
+     *   public/logo.png
+     *
+     * werden auf eine tatsächlich vorhandene Datei innerhalb
+     * der aktuellen SuiteCRM-Installation umgesetzt.
+     */
+    private function resolveLocalImageSources(string $html): string
     {
+        return preg_replace_callback(
+            '/(<img\b[^>]*\bsrc=["\'])([^"\']+)(["\'])/i',
+            function (array $matches): string {
+                $src = html_entity_decode(
+                    $matches[2],
+                    ENT_QUOTES | ENT_HTML5,
+                    'UTF-8'
+                );
+
+                $path = parse_url($src, PHP_URL_PATH);
+
+                if (!is_string($path) || $path === '') {
+                    $path = $src;
+                }
+
+                $path = ltrim($path, '/');
+
+                /*
+                 * Keine Pfadnavigation außerhalb des CRM-Verzeichnisses.
+                 */
+                if (
+                    $path === ''
+                    || str_contains($path, '..')
+                ) {
+                    return $matches[0];
+                }
+
+                $localFile =
+                    $this->crmRoot . '/' . $path;
+
+                if (!is_file($localFile)) {
+                    return $matches[0];
+                }
+
+                return
+                    $matches[1]
+                    . $localFile
+                    . $matches[3];
+            },
+            $html
+        ) ?? $html;
+    }
+
+    private function createPdfA3(
+        $template,
+        string $header,
+        string $footer
+    ): ZugferdTcLibPdf {
+        $pdf = new ZugferdTcLibPdf();
+
         /*
-         * Letzter Konstruktorparameter = 3 aktiviert PDF/A-3.
+         * Header und Footer müssen vor der ersten addPage()-Ausführung
+         * gesetzt sein, weil defaultPageContent() beim Anlegen der Seite
+         * bereits aufgerufen wird.
          */
-        $pdf = new ZugferdTCPDF(
-            (string)$template->orientation,
-            'mm',
-            (string)$template->page_size,
-            true,
-            'UTF-8',
-            false,
-            3
-        );
-
-        $pdf->SetMargins(
-            (float)$template->margin_left,
-            (float)$template->margin_top,
-            (float)$template->margin_right
-        );
-
-        $pdf->setHtmlVSpace([
-            'div' => [
-                ['h' => 0, 'n' => 0],
-                ['h' => 0, 'n' => 0],
-            ],
-        ]);
+        $pdf->setHtmlHeader($header);
+        $pdf->setHtmlFooter($footer);
 
         $pdf->setHeaderMargin(
             (float)$template->margin_header
@@ -472,98 +548,70 @@ final class ZugferdPdfService
             (float)$template->margin_footer
         );
 
-        $pdf->SetAutoPageBreak(
-            true,
-            (float)$template->margin_bottom
-        );
-
-        $pdf->setImageScale(1.25);
-
-        /*
-         * TrueTypeUnicode-Schrift, damit sie im PDF/A eingebettet wird.
-         */
-        $pdf->SetFont(
-            'dejavusanscondensed',
+        $font = $pdf->font->insert(
+            $pdf->pon,
+            'gisha',
             '',
             10
         );
 
-        $pdf->setHeaderFont([
-            'dejavusanscondensed',
-            '',
-            10,
+        $pageWidth = 210.0;
+        $pageHeight = 297.0;
+
+        $marginLeft = (float)$template->margin_left;
+        $marginRight = (float)$template->margin_right;
+        $marginTop = (float)$template->margin_top;
+        $marginBottom = (float)$template->margin_bottom;
+        $marginHeader = (float)$template->margin_header;
+        $marginFooter = (float)$template->margin_footer;
+
+        $page = $pdf->addPage([
+            'format' => 'A4',
+            'region' => [
+                [
+                    'RX' => $marginLeft,
+                    'RY' => $marginHeader,
+                    'RW' => $pageWidth
+                        - $marginLeft
+                        - $marginRight,
+                    'RH' => $marginTop
+                        - $marginHeader,
+                ],
+                [
+                    'RX' => $marginLeft,
+                    'RY' => $pageHeight
+                        - $marginBottom,
+                    'RW' => $pageWidth
+                        - $marginLeft
+                        - $marginRight,
+                    'RH' => $marginBottom
+                        - $marginFooter,
+                ],
+                [
+                    'RX' => $marginLeft,
+                    'RY' => $marginTop,
+                    'RW' => $pageWidth
+                        - $marginLeft
+                        - $marginRight,
+                    'RH' => $pageHeight
+                        - $marginTop
+                        - $marginBottom,
+                ],
+            ],
         ]);
 
-        $pdf->setFooterFont([
-            'dejavusanscondensed',
-            '',
-            10,
-        ]);
+        $pdf->page->addContent(
+            $font['out'],
+            (int)$page['pid']
+        );
+
+        $pdf->page->selectRegion(
+            2,
+            (int)$page['pid']
+        );
 
         return $pdf;
     }
 
-    /**
-     * Ergänzt Factur-X/ZUGFeRD-XMP-Metadaten für Profil EN16931.
-     */
-    private function addFacturXXmp(
-        ZugferdTCPDF $pdf
-    ): void {
-        $namespace =
-            'urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#';
 
-        $rdf = <<<XML
-<rdf:Description rdf:about=""
-    xmlns:fx="{$namespace}">
-    <fx:DocumentType>INVOICE</fx:DocumentType>
-    <fx:DocumentFileName>factur-x.xml</fx:DocumentFileName>
-    <fx:Version>1.0</fx:Version>
-    <fx:ConformanceLevel>EN 16931</fx:ConformanceLevel>
-</rdf:Description>
-XML;
-
-        $pdf->setExtraXMPRDF($rdf);
-
-        /*
-         * PDF/A Extension Schema für die vier Factur-X-Felder.
-         * TCPDF fügt diesen Block in pdfaExtension:schemas/rdf:Bag ein.
-         */
-        $schema = <<<XML
-<rdf:li rdf:parseType="Resource">
-    <pdfaSchema:schema>Factur-X PDFA Extension Schema</pdfaSchema:schema>
-    <pdfaSchema:namespaceURI>{$namespace}</pdfaSchema:namespaceURI>
-    <pdfaSchema:prefix>fx</pdfaSchema:prefix>
-    <pdfaSchema:property>
-        <rdf:Seq>
-            <rdf:li rdf:parseType="Resource">
-                <pdfaProperty:name>DocumentFileName</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>Name of the embedded XML invoice file</pdfaProperty:description>
-            </rdf:li>
-            <rdf:li rdf:parseType="Resource">
-                <pdfaProperty:name>DocumentType</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>Type of the hybrid document</pdfaProperty:description>
-            </rdf:li>
-            <rdf:li rdf:parseType="Resource">
-                <pdfaProperty:name>Version</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>Factur-X schema version</pdfaProperty:description>
-            </rdf:li>
-            <rdf:li rdf:parseType="Resource">
-                <pdfaProperty:name>ConformanceLevel</pdfaProperty:name>
-                <pdfaProperty:valueType>Text</pdfaProperty:valueType>
-                <pdfaProperty:category>external</pdfaProperty:category>
-                <pdfaProperty:description>Factur-X conformance level</pdfaProperty:description>
-            </rdf:li>
-        </rdf:Seq>
-    </pdfaSchema:property>
-</rdf:li>
-XML;
-
-        $pdf->setExtraXMPPdfaextension($schema);
-    }
 }
