@@ -12,8 +12,8 @@ class PRK_ZugferdUiHook
         $action = (string)($_REQUEST['action'] ?? '');
 
         if (
-            $module !== 'AOS_Invoices' ||
-            $action !== 'DetailView'
+            $module !== 'AOS_Invoices'
+            || $action !== 'DetailView'
         ) {
             return;
         }
@@ -35,6 +35,37 @@ class PRK_ZugferdUiHook
         echo <<<HTML
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('popupForm');
+
+    if (form && typeof form.submit === 'function') {
+        var nativeSubmit = form.submit.bind(form);
+
+        form.submit = function () {
+            var task = form.task ? form.task.value : '';
+
+            if (task === 'zugferdpdf') {
+                var templateId = form.templateID
+                    ? form.templateID.value
+                    : '';
+
+                if (!templateId) {
+                    alert('Bitte ein PDF-Template auswählen.');
+                    return false;
+                }
+
+                window.location.href =
+                    'index.php?entryPoint=prkZugferdDownload&record=' +
+                    encodeURIComponent({$recordIdJs}) +
+                    '&templateID=' +
+                    encodeURIComponent(templateId);
+
+                return false;
+            }
+
+            return nativeSubmit();
+        };
+    }
+
     var buttons = document.querySelectorAll('input.button');
 
     for (var i = 0; i < buttons.length; i++) {
@@ -52,10 +83,12 @@ document.addEventListener('DOMContentLoaded', function () {
         button.value = 'ZUGFeRD-PDF';
 
         button.onclick = function () {
-            window.location.href =
-                'index.php?entryPoint=prkZugferdDownload&record=' +
-                encodeURIComponent({$recordIdJs});
+            if (typeof showPopup !== 'function') {
+                alert('Die PDF-Template-Auswahl konnte nicht geöffnet werden.');
+                return false;
+            }
 
+            showPopup('zugferdpdf');
             return false;
         };
 
