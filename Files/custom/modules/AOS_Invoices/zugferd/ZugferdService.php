@@ -17,6 +17,7 @@ use Easybill\ZUGFeRD2\Model\DocumentContextParameter;
 use Easybill\ZUGFeRD2\Model\DocumentLineDocument;
 use Easybill\ZUGFeRD2\Model\ExchangedDocument;
 use Easybill\ZUGFeRD2\Model\ExchangedDocumentContext;
+use Easybill\ZUGFeRD2\Model\FormattedDateTime;
 use Easybill\ZUGFeRD2\Model\HeaderTradeAgreement;
 use Easybill\ZUGFeRD2\Model\HeaderTradeDelivery;
 use Easybill\ZUGFeRD2\Model\HeaderTradeSettlement;
@@ -76,6 +77,12 @@ final class ZugferdService
 
         $this->validateInvoiceHeader($invoiceBean);
 
+        $documentType = $this->getDocumentType($invoiceBean);
+        $originalInvoiceBean = $this->loadOriginalInvoice(
+            $invoiceBean,
+            $documentType
+        );
+
         $account = \BeanFactory::getBean('Accounts', (string)$invoiceBean->billing_account_id);
         if (!$account || empty($account->id)) {
             throw new ZugferdException('Der zur Rechnung gehörende Account konnte nicht geladen werden.');
@@ -128,7 +135,9 @@ if (empty($quoteBean->ende_c)) {
     $invoiceBean,
     $account,
     $lineBeans,
-    $quoteBean
+    $quoteBean,
+    $documentType,
+    $originalInvoiceBean
 );
         $xml = Builder::create()->transform($invoice);
 
@@ -157,7 +166,9 @@ if (empty($quoteBean->ende_c)) {
     $invoiceBean,
     $account,
     array $lineBeans,
-    $quoteBean
+    $quoteBean,
+    string $documentType,
+    $originalInvoiceBean
 ): CrossIndustryInvoice {
 
         $invoice = new CrossIndustryInvoice();
@@ -168,7 +179,8 @@ if (empty($quoteBean->ende_c)) {
 
         $invoice->exchangedDocument = new ExchangedDocument();
         $invoice->exchangedDocument->id = (string)$invoiceBean->number;
-        $invoice->exchangedDocument->typeCode = '380';
+        $invoice->exchangedDocument->typeCode =
+            $this->getDocumentTypeCode($documentType);
         $invoice->exchangedDocument->issueDateTime = ZugferdDateTime::create(102, $this->zugferdDate((string)$invoiceBean->invoice_date));
 
         $invoice->supplyChainTradeTransaction = new SupplyChainTradeTransaction();
@@ -196,7 +208,8 @@ $this->addSettlement(
     $invoice,
     $invoiceBean,
     $taxGroups,
-    $quoteBean
+    $quoteBean,
+    $originalInvoiceBean
 );
 
         return $invoice;
@@ -306,7 +319,8 @@ $this->addSettlement(
     CrossIndustryInvoice $invoice,
     $invoiceBean,
     array $taxGroups,
-    $quoteBean
+    $quoteBean,
+    $originalInvoiceBean
 ): void {
 
         $settlement = new HeaderTradeSettlement();
@@ -325,6 +339,23 @@ $billingPeriod->endDatetime = ZugferdDateTime::create(
 );
 
 $settlement->billingSpecifiedPeriod = $billingPeriod;
+
+        if ($originalInvoiceBean !== null) {
+            $settlement->invoiceReferencedDocument =
+                ReferencedDocument::create(
+                    (string)$originalInvoiceBean->number
+                );
+
+            $settlement
+                ->invoiceReferencedDocument
+                ->formattedIssueDateTime =
+                    FormattedDateTime::create(
+                        102,
+                        $this->zugferdDate(
+                            (string)$originalInvoiceBean->invoice_date
+                        )
+                    );
+        }
 
         $paymentMeans = new TradeSettlementPaymentMeans();
         $paymentMeans->typeCode = '58';
@@ -365,6 +396,92 @@ $settlement->billingSpecifiedPeriod = $billingPeriod;
 
         $settlement->specifiedTradeSettlementHeaderMonetarySummation = $summation;
         $invoice->supplyChainTradeTransaction->applicableHeaderTradeSettlement = $settlement;
+    }
+
+    private function getDocumentType($invoiceBean): string
+    {
+        $documentType = trim(
+            (string)($invoiceBean->zugferd_document_type_c ?? '')
+        );
+
+        if ($documentType === '') {
+            return 'invoice';
+        }
+
+        return $documentType;
+    }
+
+    private function getDocumentTypeCode(string $documentType): string
+    {
+        return match ($documentType) {
+            'invoice' => '380',
+            'cancellation' => '381',
+
+            'replacement' => throw new ZugferdException(
+                'Die Korrekturrechnung ist für ZUGFeRD noch nicht implementiert.'
+            ),
+
+            'credit_note' => throw new ZugferdException(
+                'Die Gutschrift ist für ZUGFeRD noch nicht implementiert.'
+            ),
+
+            default => throw new ZugferdException(
+                'Unbekannter ZUGFeRD-Dokumenttyp: ' . $documentType
+            ),
+        };
+    }
+
+    private function loadOriginalInvoice(
+        $invoiceBean,
+        string $documentType
+    ) {
+        if ($documentType !== 'cancellation') {
+            return null;
+        }
+
+        $originalInvoiceId = trim(
+            (string)($invoiceBean->original_invoice_id_c ?? '')
+        );
+
+        if ($originalInvoiceId === '') {
+            throw new ZugferdException(
+                'Für eine Stornorechnung muss eine Ursprungsrechnung ausgewählt werden.'
+            );
+        }
+
+        if ($originalInvoiceId === (string)$invoiceBean->id) {
+            throw new ZugferdException(
+                'Eine Stornorechnung kann sich nicht selbst als Ursprungsrechnung referenzieren.'
+            );
+        }
+
+        $originalInvoiceBean = \BeanFactory::getBean(
+            'AOS_Invoices',
+            $originalInvoiceId
+        );
+
+        if (
+            !$originalInvoiceBean
+            || empty($originalInvoiceBean->id)
+        ) {
+            throw new ZugferdException(
+                'Die Ursprungsrechnung konnte nicht geladen werden.'
+            );
+        }
+
+        if (empty($originalInvoiceBean->number)) {
+            throw new ZugferdException(
+                'Die Ursprungsrechnung hat keine Rechnungsnummer.'
+            );
+        }
+
+        if (empty($originalInvoiceBean->invoice_date)) {
+            throw new ZugferdException(
+                'Die Ursprungsrechnung hat kein Rechnungsdatum.'
+            );
+        }
+
+        return $originalInvoiceBean;
     }
 
     private function validateInvoiceHeader($invoiceBean): void
