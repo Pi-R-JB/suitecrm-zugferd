@@ -1,6 +1,6 @@
 {
     "require": {
         "easybill/zugferd-php": "2.1.1",
-        "tecnickcom/tcpdf": "6.10.1"
+        "tecnickcom/tc-lib-pdf": "^8"
     }
 }
