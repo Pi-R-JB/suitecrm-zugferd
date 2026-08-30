@@ -12,15 +12,43 @@ class RevenueAmountHook
             (string)($bean->zugferd_document_type_c ?? 'invoice')
         );
 
-        $factor = ($documentType === 'cancellation') ? -1 : 1;
+        $totalAmount =
+            (float)($bean->total_amount ?? 0);
 
-        $totalAmount = (float)($bean->total_amount ?? 0);
-        $totalAmountUsdollar = (float)($bean->total_amount_usdollar ?? 0);
+        $totalAmountUsdollar =
+            (float)($bean->total_amount_usdollar ?? 0);
 
-        $bean->revenue_amount_c =
-            $factor * abs($totalAmount);
+        switch ($documentType) {
+            case 'cancellation':
+                $bean->revenue_amount_c =
+                    -abs($totalAmount);
 
-        $bean->revenue_amount_usdollar_c =
-            $factor * abs($totalAmountUsdollar);
+                $bean->revenue_amount_usdollar_c =
+                    -abs($totalAmountUsdollar);
+                break;
+
+            case 'replacement':
+                /*
+                 * Eine Korrekturrechnung stellt nur die Differenz
+                 * zur Ursprungsrechnung dar.
+                 *
+                 * Positive Summe  = zusätzliche Forderung
+                 * Negative Summe  = Entlastung des Kunden
+                 */
+                $bean->revenue_amount_c =
+                    $totalAmount;
+
+                $bean->revenue_amount_usdollar_c =
+                    $totalAmountUsdollar;
+                break;
+
+            default:
+                $bean->revenue_amount_c =
+                    abs($totalAmount);
+
+                $bean->revenue_amount_usdollar_c =
+                    abs($totalAmountUsdollar);
+                break;
+        }
     }
 }
