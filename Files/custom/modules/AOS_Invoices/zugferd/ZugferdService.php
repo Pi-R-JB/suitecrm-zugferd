@@ -185,7 +185,11 @@ if (empty($quoteBean->ende_c)) {
 
         $invoice->supplyChainTradeTransaction = new SupplyChainTradeTransaction();
 
-        [$taxGroups, $calculatedNetTotal, $calculatedTaxTotal] = $this->addLineItems($invoice, $lineBeans);
+        [$taxGroups, $calculatedNetTotal, $calculatedTaxTotal] = $this->addLineItems(
+            $invoice,
+            $lineBeans,
+            $documentType
+        );
         $this->assertInvoiceTotals($invoiceBean, $calculatedNetTotal, $calculatedTaxTotal);
         $this->addTradeAgreement($invoice, $invoiceBean, $account);
 
@@ -215,7 +219,11 @@ $this->addSettlement(
         return $invoice;
     }
 
-    private function addLineItems(CrossIndustryInvoice $invoice, array $lineBeans): array
+    private function addLineItems(
+        CrossIndustryInvoice $invoice,
+        array $lineBeans,
+        string $documentType
+    ): array
     {
         $taxGroups = [];
         $positionNo = 1;
@@ -223,7 +231,7 @@ $this->addSettlement(
         $calculatedTaxTotal = 0.0;
 
         foreach ($lineBeans as $lineBean) {
-            $this->validateLine($lineBean, $positionNo);
+            $this->validateLine($lineBean, $positionNo, $documentType);
 
             $quantity = (float)$lineBean->product_qty;
             $unitPrice = (float)$lineBean->product_unit_price;
@@ -416,10 +424,7 @@ $settlement->billingSpecifiedPeriod = $billingPeriod;
         return match ($documentType) {
             'invoice' => '380',
             'cancellation' => '381',
-
-            'replacement' => throw new ZugferdException(
-                'Die Korrekturrechnung ist für ZUGFeRD noch nicht implementiert.'
-            ),
+            'replacement' => '384',
 
             'credit_note' => throw new ZugferdException(
                 'Die Gutschrift ist für ZUGFeRD noch nicht implementiert.'
@@ -435,7 +440,7 @@ $settlement->billingSpecifiedPeriod = $billingPeriod;
         $invoiceBean,
         string $documentType
     ) {
-        if ($documentType !== 'cancellation') {
+        if (!in_array($documentType, ['cancellation', 'replacement'], true)) {
             return null;
         }
 
@@ -445,13 +450,13 @@ $settlement->billingSpecifiedPeriod = $billingPeriod;
 
         if ($originalInvoiceId === '') {
             throw new ZugferdException(
-                'Für eine Stornorechnung muss eine Ursprungsrechnung ausgewählt werden.'
+                'Für Storno- und Korrekturrechnungen muss eine Ursprungsrechnung ausgewählt werden.'
             );
         }
 
         if ($originalInvoiceId === (string)$invoiceBean->id) {
             throw new ZugferdException(
-                'Eine Stornorechnung kann sich nicht selbst als Ursprungsrechnung referenzieren.'
+                'Eine Rechnung kann sich nicht selbst als Ursprungsrechnung referenzieren.'
             );
         }
 
@@ -504,14 +509,33 @@ $settlement->billingSpecifiedPeriod = $billingPeriod;
         }
     }
 
-    private function validateLine($lineBean, int $positionNo): void
-    {
+    private function validateLine(
+        $lineBean,
+        int $positionNo,
+        string $documentType
+    ): void {
         if (empty($lineBean->name)) {
             throw new ZugferdException("Position {$positionNo}: Bezeichnung fehlt.");
         }
-        if (!isset($lineBean->product_qty) || (float)$lineBean->product_qty <= 0) {
-            throw new ZugferdException("Position {$positionNo}: Menge ist ungültig.");
+
+        if (!isset($lineBean->product_qty)) {
+            throw new ZugferdException("Position {$positionNo}: Menge fehlt.");
         }
+
+        $quantity = (float)$lineBean->product_qty;
+
+        if ($documentType === 'replacement') {
+            if ($quantity == 0.0) {
+                throw new ZugferdException(
+                    "Position {$positionNo}: Menge darf bei einer Korrekturrechnung nicht 0 sein."
+                );
+            }
+        } elseif ($quantity <= 0.0) {
+            throw new ZugferdException(
+                "Position {$positionNo}: Menge muss größer als 0 sein."
+            );
+        }
+
         if (!isset($lineBean->product_unit_price)) {
             throw new ZugferdException("Position {$positionNo}: Einzelpreis fehlt.");
         }
