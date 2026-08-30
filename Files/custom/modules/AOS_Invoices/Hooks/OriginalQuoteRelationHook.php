@@ -18,7 +18,13 @@ final class OriginalQuoteRelationHook
             (string)($bean->zugferd_document_type_c ?? 'invoice')
         );
 
-        if ($documentType !== 'cancellation') {
+        if (
+            !in_array(
+                $documentType,
+                ['cancellation', 'replacement'],
+                true
+            )
+        ) {
             return;
         }
 
