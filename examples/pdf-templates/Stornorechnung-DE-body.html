@@ -1,0 +1,127 @@
+<!--
+  Example body for an AOS PDF template "Stornorechnung".
+  All company/contact data below is fictitious and must be adapted to the installation.
+  Header and footer are intentionally not included.
+-->
+
+<div style="height: 30.8mm;">&nbsp;</div>
+
+<table style="width: 100%; font-family: gisha;" border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td style="width: 55%; vertical-align: top; text-align: left;">
+<div style="font-size: 8px; text-decoration: underline;">Beispiel GmbH • Musterstraße 1 • 12345 Musterstadt</div>
+<div style="height: 3mm;">&nbsp;</div>
+<div style="font-size: 11px;">$aos_quotes_billing_account<br>
+$billing_contact_salutation $billing_contact_first_name $billing_contact_last_name<br>
+$billing_account_billing_address_street<br>
+$billing_account_billing_address_postalcode $billing_account_billing_address_city</div>
+</td>
+
+<td style="width: 45%; vertical-align: top; text-align: left; font-size: 9px;">
+Telefon +49 30 12345670<br><br>
+Ihre Umsatzsteuer-ID: $billing_account_ustid_c<br>
+Ihre Bestellnummer: $aos_invoices_po_numberinv_c<br>
+Ursprungsrechnung: RE$aos_invoices_original_invoice_name_c<br>
+Leistungszeitraum: $aos_quotes_beginn_c bis $aos_quotes_ende_c<br><br>
+Musterstadt, $aos_invoices_invoice_date
+</td>
+</tr>
+</tbody>
+</table>
+
+<div style="height: 8mm;">&nbsp;</div>
+
+<h2 style="text-align: left; font-family: gisha;">Stornorechnung RE$aos_invoices_number</h2>
+
+<p style="text-align: left; font-family: gisha; font-size: 11px;">
+Sehr geehrte Damen und Herren,
+</p>
+
+<p style="text-align: left; font-family: gisha; font-size: 11px;">
+hiermit stornieren wir die Rechnung RE$aos_invoices_original_invoice_name_c vollständig.<br>
+Die nachfolgend aufgeführten Positionen entsprechen der Ursprungsrechnung:
+</p>
+
+<table style="width: 100%; border-collapse: collapse; border-spacing: 0; font-family: gisha;" border="0" cellspacing="0" cellpadding="0">
+<tbody>
+
+<tr>
+<td style="width: 7%; border-style: solid; background-color: #d7d7d7; border-width: 0.35px; padding: 2px 4px; font-weight: bold; text-align: center; font-size: 9px;">Menge</td>
+<td style="width: 19%; border-style: solid; background-color: #d7d7d7; border-width: 0.35px; padding: 2px 4px; font-weight: bold; text-align: center; font-size: 9px;">Produkt</td>
+<td style="width: 28%; border-style: solid; background-color: #d7d7d7; border-width: 0.35px; padding: 2px 4px; font-weight: bold; text-align: center; font-size: 9px;">Beschreibung</td>
+<td style="width: 11%; border-style: solid; background-color: #d7d7d7; border-width: 0.35px; padding: 2px 4px; font-weight: bold; text-align: center; font-size: 9px;">Listenpreis</td>
+<td style="width: 11%; border-style: solid; background-color: #d7d7d7; border-width: 0.35px; padding: 2px 4px; font-weight: bold; text-align: center; font-size: 9px;">Verkaufspreis</td>
+<td style="width: 12%; border-style: solid; background-color: #d7d7d7; border-width: 0.35px; padding: 2px 4px; font-weight: bold; text-align: center; font-size: 9px;">Steuer</td>
+<td style="width: 12%; border-style: solid; background-color: #d7d7d7; border-width: 0.35px; padding: 2px 4px; font-weight: bold; text-align: center; font-size: 9px;">Gesamt</td>
+</tr>
+
+<tr>
+<td style="width: 7%; border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: center; font-size: 9px;">$aos_products_quotes_product_qty</td>
+<td style="width: 19%; border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: left; font-size: 9px;">$aos_products_quotes_name</td>
+<td style="width: 28%; border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: left; font-size: 9px;">$aos_products_quotes_item_description</td>
+<td style="width: 11%; border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">€ $aos_products_quotes_product_list_price</td>
+<td style="width: 11%; border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">€ $aos_products_quotes_product_unit_price</td>
+<td style="width: 12%; border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">$aos_products_quotes_vat<br>€ $aos_products_quotes_vat_amt_usdollar</td>
+<td style="width: 12%; border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">€ $aos_products_quotes_product_total_price</td>
+</tr>
+
+<tr>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: left; font-size: 9px;" colspan="3">$aos_services_quotes_name</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">€ $aos_services_quotes_service_list_price</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">€ $aos_services_quotes_service_unit_price</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">$aos_services_quotes_vat<br>€ $aos_services_quotes_vat_amt</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; text-align: right; font-size: 9px;">€ $aos_services_quotes_service_total_price</td>
+</tr>
+
+<tr>
+<td colspan="5">&nbsp;</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-weight: bold; font-size: 9px; text-align: right;">Gesamt</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-size: 9px; text-align: right;">€ $total_amt</td>
+</tr>
+
+<tr>
+<td colspan="5">&nbsp;</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-weight: bold; font-size: 9px; text-align: right;">Rabatt</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-size: 9px; text-align: right;">€ $discount_amount</td>
+</tr>
+
+<tr>
+<td colspan="5">&nbsp;</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-weight: bold; font-size: 9px; text-align: right;">Zwischensumme</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-size: 9px; text-align: right;">€ $subtotal_amount</td>
+</tr>
+
+<tr>
+<td colspan="5">&nbsp;</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-weight: bold; font-size: 9px; text-align: right;">Steuer</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-size: 9px; text-align: right;">€ $tax_amount</td>
+</tr>
+
+<tr>
+<td colspan="5">&nbsp;</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-weight: bold; font-size: 9px; text-align: right;">Versand</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-size: 9px; text-align: right;">€ $shipping_amount</td>
+</tr>
+
+<tr>
+<td colspan="5">&nbsp;</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-weight: bold; font-size: 9px; text-align: right;">Stornobetrag</td>
+<td style="border-style: solid; border-width: 0.35px; padding: 2px 4px; font-weight: bold; font-size: 9px; text-align: right;">€ $total_amount</td>
+</tr>
+
+</tbody>
+</table>
+
+<p style="text-align: left; font-family: gisha; font-size: 11px;">
+Mit dieser Stornorechnung wird die Ursprungsrechnung
+RE$aos_invoices_original_invoice_name_c vollständig aufgehoben.
+</p>
+
+<p style="text-align: left; font-family: gisha; font-size: 11px;">
+Mit freundlichen Grüßen
+</p>
+
+<p style="text-align: left; font-family: gisha; font-size: 11px;">
+$assigned_user_name_first_name $assigned_user_name_last_name
+</p>
