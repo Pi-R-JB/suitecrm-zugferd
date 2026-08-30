@@ -85,6 +85,14 @@ $installdefs = array(
             'from' => '<basepath>/Files/custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_original_quote_relation.php',
             'to' => 'custom/Extension/modules/AOS_Invoices/Ext/LogicHooks/zugferd_original_quote_relation.php',
         ),
+        array(
+            'from' => '<basepath>/Files/custom/Extension/modules/Administration/Ext/Language/de_DE.prk_zugferd.php',
+            'to' => 'custom/Extension/modules/Administration/Ext/Language/de_DE.prk_zugferd.php',
+        ),
+        array(
+            'from' => '<basepath>/Files/custom/Extension/modules/Administration/Ext/Language/en_us.prk_zugferd.php',
+            'to' => 'custom/Extension/modules/Administration/Ext/Language/en_us.prk_zugferd.php',
+        ),
     ),
 
     'language' => array(
